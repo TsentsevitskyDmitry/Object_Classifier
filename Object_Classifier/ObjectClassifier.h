@@ -9,9 +9,20 @@ class ObjectClassifier
 {
 private:
 	const double CANNY_TRESHOLD = 200;
-	void reduceNoise(std::vector<std::vector<cv::Point>>& contours);
+	const double ADAPTIVE_TRESHOLD_C = 32;
+	const double ADAPTIVE_TRESHOLD_MAX_VALUE = 255;
+	const int	 ADAPTIVE_TRESHOLD_BLOCK_SIZE = 1025;
+	const int	 REDUCE_NOISE_MIN_LEN = 100;
+	const int	 BLUR_KERNEL_SIZE = 3;
+	const int	 OBJECT_ID_EMPTY = -1;
+	const double TM_MATCH_TRESHOLD = 0.90;
+
+	void reduceNoise(std::vector<std::vector<cv::Point>>& contours, const int minLen = 100);
+	void match(const std::vector<cv::Mat>& normalized_objects, std::vector<Object>& objects);
+	void hconcatMatrix(const std::vector<cv::Mat>& src, std::vector<int> indexes, cv::Mat& dst);
+	int hconcatFindPositionIndex(const std::vector<cv::Mat>& src, std::vector<int> indexes, cv::Point position);
 
 public:
-	std::vector<Object> process(cv::Mat image);
+	std::vector<Object> process(const cv::Mat& image);
 };
 
