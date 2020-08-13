@@ -181,7 +181,7 @@ void ObjectClassifier::hconcatMatrix(const std::vector<cv::Mat>& src, const std:
     }
 }
 
-int ObjectClassifier::hconcatFindPositionIndex(const std::vector<cv::Mat>& src, const std::vector<int>& indexes, const cv::Point& position)
+int ObjectClassifier::hfindMatrixIndexByPosition(const std::vector<cv::Mat>& src, const std::vector<int>& indexes, const cv::Point& position)
 {
     if (!src.size()) return -1;
 

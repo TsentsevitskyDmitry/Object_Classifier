@@ -20,7 +20,7 @@ private:
 	void reduceNoise(std::vector<std::vector<cv::Point>>& contours, const int minLen = 100);
 	void match(const std::vector<cv::Mat>& normalized_objects, std::vector<Object>& objects);
 	void hconcatMatrix(const std::vector<cv::Mat>& src, const std::vector<int>& indexes, cv::Mat& dst);
-	int hconcatFindPositionIndex(const std::vector<cv::Mat>& src, const std::vector<int>& indexes, const cv::Point& position);
+	int  hfindMatrixIndexByPosition(const std::vector<cv::Mat>& src, const std::vector<int>& indexes, const cv::Point& position);
 
 public:
 	std::vector<Object> process(const cv::Mat& image);
