@@ -1,40 +1,7 @@
-﻿  ObjectClassifier.cpp
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(53,71): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(59,67): warning C4244: аргумент: преобразование "double" в "_Tp", возможна потеря данных
-          with
-          [
-              _Tp=float
-          ]
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(59,42): warning C4244: аргумент: преобразование "double" в "_Tp", возможна потеря данных
-          with
-          [
-              _Tp=float
-          ]
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(62,62): warning C4244: аргумент: преобразование "double" в "float", возможна потеря данных
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(99,88): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(102,38): warning C4244: аргумент: преобразование "float" в "_Tp", возможна потеря данных
-          with
-          [
-              _Tp=int
-          ]
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(102,24): warning C4244: аргумент: преобразование "float" в "_Tp", возможна потеря данных
-          with
-          [
-              _Tp=int
-          ]
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(103,38): warning C4244: аргумент: преобразование "float" в "_Tp", возможна потеря данных
-          with
-          [
-              _Tp=int
-          ]
-D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(103,24): warning C4244: аргумент: преобразование "float" в "_Tp", возможна потеря данных
-          with
-          [
-              _Tp=int
-          ]
+﻿  main.cpp
   Создание кода
-  1 of 479 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+  1 of 446 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    14 functions had inline decision re-evaluated but remain unchanged
+    0 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   Object_Classifier.vcxproj -> D:\Projects\Softarex\CV_Task\Object_Classifier\x64\Release\Object_Classifier.exe

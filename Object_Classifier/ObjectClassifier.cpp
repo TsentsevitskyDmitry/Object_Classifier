@@ -8,7 +8,7 @@
 using namespace cv;
 using namespace std;
 
-void inline DEBUG_INFO(){
+void inline DEBUG_INFO(std::function<void(std::function<void(void)>)> lam){
 
 }
 
@@ -22,8 +22,6 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
 	cvtColor(image, src_gray, COLOR_BGR2GRAY);
 
 	blur(src_gray, src_gray, Size(3, 3));
-    //inRange(src_gray, cv::Scalar(a), cv::Scalar(b), bin);
-    //threshold(src_gray, bin, cv::Scalar(a), cv::Scalar(b), THRESH_BINARY);
     adaptiveThreshold(src_gray, src_bin, 
                         ADAPTIVE_TRESHOLD_MAX_VALUE, 
                         ADAPTIVE_THRESH_MEAN_C, 
@@ -58,7 +56,6 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         double angle = -atanf(vx / vy) / CV_PI * 180.0;
         Point2f center(object_image.cols / 2.0, object_image.rows / 2.0);
         Mat rot = getRotationMatrix2D(center, angle, 1.0);
-        // stackoverflow here
         Rect bbox = RotatedRect(center, object_image.size(), angle).boundingRect();
         rot.at<double>(0, 2) += bbox.width / 2.0 - center.x;
         rot.at<double>(1, 2) += bbox.height / 2.0 - center.y;
@@ -88,33 +85,9 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         if (downside < upside)
             rotate(normalized_object, normalized_object, ROTATE_180);
 
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //cvtColor(normalized_object, normalized_object, COLOR_BGR2GRAY);
-        //cvtColor(normalized_object, normalized_object, COLOR_BGR2HSV);
         normalized_objects.push_back(normalized_object);
         objects.push_back(object);
-
-#ifdef CLASSIFIER_DEBUG
-        Scalar contours_color = Scalar(255, 255, 255);
-        drawContours(drawing, contours, i, contours_color, FILLED, LINE_8, hierarchy, 0);  
-        float x = vertical_line[2];                                                             
-        float y = vertical_line[3];                                                             
-        Point point1(x - vx * 200, y - vy * 200);                                               
-        Point point2(x + vx * 200, y + vy * 200);                                               
-        Scalar line_color = Scalar(0, 0, 255);                                                  
-        line(drawing, point1, point2, line_color);                                              
-        Scalar rect_color = Scalar(0, 255, 0);                                                  
-        rectangle(drawing, object.roi, rect_color);
-        imshow(to_string(i), normalized_object);
-#endif
     }
-
-#ifdef CLASSIFIER_DEBUG_2
-    imshow("src_gray", src_gray);
-    imshow("bin", src_bin);
-    imshow("canny_output", canny_output);
-    imshow("Res", drawing);
-#endif
 
     if (objects.size() > 1)
         match(normalized_objects, objects);
@@ -127,15 +100,12 @@ void ObjectClassifier::reduceNoise(vector<vector<Point>>& contours, const int mi
     auto condition = [minLen](vector<Point>& v) {
         return arcLength(v, true) < minLen ? true : false;
     };
-
     contours.erase(std::remove_if(contours.begin(), contours.end(), condition), contours.end());
 }
 
 void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Object>& objects)
 {
     int id_counter = 0;
-    const int ii = 2;
-    //for (size_t i = ii; i < ii + 1; ++i)
     for (size_t i = 0; i < objects.size(); ++i)    
     {
         if (objects[i].id != OBJECT_ID_EMPTY){
@@ -172,41 +142,21 @@ void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Obje
                 minMaxLoc(tm_result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
                 matchLoc = maxLoc;
 
-                if (maxVal < TM_MATCH_TRESHOLD) {
+                if (maxVal < TM_MATCH_TRESHOLD)
                     break;
-                }
 
                 int index = hconcatFindPositionIndex(templates, indexes, matchLoc + Point(templ.cols / 2, 0));
                 objects[index].id = id_counter;
-
-                rectangle(tm_image, matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows), Scalar(255, 255, 255));
                 rectangle(tm_result, Point(matchLoc.x - templ.cols / 2, 0), Point(matchLoc.x + templ.cols / 2, tm_result.size().height), Scalar(0, 0, 0), cv::FILLED);
-
-                imshow("_tm_image", tm_image);
-                imshow("here", tm_result);
             }
-            //imshow(to_string(i) + "tm_result", tm_result);
-
-            imshow(to_string(i) + "_tm_image", tm_image);
         }
-
-
 
         objects[i].id = id_counter;
         ++id_counter;
     }
-
-    
-
-
-
-
-
-
-
 }
 
-void ObjectClassifier::hconcatMatrix(const std::vector<cv::Mat>& src, std::vector<int> indexes, cv::Mat& dst)
+void ObjectClassifier::hconcatMatrix(const std::vector<cv::Mat>& src, const std::vector<int>& indexes, cv::Mat& dst)
 {
     if (!src.size()) return;
 
@@ -231,7 +181,7 @@ void ObjectClassifier::hconcatMatrix(const std::vector<cv::Mat>& src, std::vecto
     }
 }
 
-int ObjectClassifier::hconcatFindPositionIndex(const std::vector<cv::Mat>& src, std::vector<int> indexes, cv::Point position)
+int ObjectClassifier::hconcatFindPositionIndex(const std::vector<cv::Mat>& src, const std::vector<int>& indexes, const cv::Point& position)
 {
     if (!src.size()) return -1;
 

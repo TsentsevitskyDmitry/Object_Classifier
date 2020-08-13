@@ -20,7 +20,7 @@ Scalar get_color_by_index(int index)
 
 int main(int argc, char** argv)
 {
-    Mat src = imread(samples::findFile("../pics/img3_.jpg"));
+    Mat src = imread(samples::findFile("../pics/img3.jpg"));
 
     ObjectClassifier classifier;
     vector<Object> objects = classifier.process(src);
@@ -29,6 +29,7 @@ int main(int argc, char** argv)
         cout << object.id << endl;
         rectangle(src, object.roi, get_color_by_index(object.id), 2);
     }
+
     imshow("main", src);
     waitKey();
     return 0;
