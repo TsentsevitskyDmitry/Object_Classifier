@@ -145,7 +145,7 @@ void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Obje
                 if (maxVal < TM_MATCH_TRESHOLD)
                     break;
 
-                int index = hconcatFindPositionIndex(templates, indexes, matchLoc + Point(templ.cols / 2, 0));
+                int index = hfindMatrixIndexByPosition(templates, indexes, matchLoc + Point(templ.cols / 2, 0));
                 objects[index].id = id_counter;
                 rectangle(tm_result, Point(matchLoc.x - templ.cols / 2, 0), Point(matchLoc.x + templ.cols / 2, tm_result.size().height), Scalar(0, 0, 0), cv::FILLED);
             }
