@@ -3,8 +3,6 @@
 #include <opencv2/core/mat.hpp>
 #include "Object.h"
 
-#define CLASSIFIER_DEBUG
-
 class ObjectClassifier
 {
 private:
