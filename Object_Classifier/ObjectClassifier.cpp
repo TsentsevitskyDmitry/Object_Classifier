@@ -8,9 +8,6 @@
 using namespace cv;
 using namespace std;
 
-void inline DEBUG_INFO(std::function<void(std::function<void(void)>)> lam){
-
-}
 
 std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
 {
@@ -141,7 +138,7 @@ void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Obje
                 Point matchLoc;
                 minMaxLoc(tm_result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
                 matchLoc = maxLoc;
-
+    
                 if (maxVal < TM_MATCH_TRESHOLD)
                     break;
 
