@@ -4,27 +4,36 @@
 #include "opencv2/imgproc.hpp"
 #include <iostream>
 #include <algorithm>
+#include <opencv2/photo.hpp>
 
 using namespace cv;
 using namespace std;
 
+extern int all, bll;
 
 std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
 {
     std::vector<Object> objects;
     std::vector<Mat> normalized_objects;
-    Mat src_gray, src_bin, canny_output;
-    Mat drawing = Mat::zeros(image.size(), CV_8UC3);
+    Mat src_blur, src_bin, canny_output,
+        drawing = Mat::zeros(image.size(), CV_8UC3);
 
-	cvtColor(image, src_gray, COLOR_BGR2GRAY);
+    blur(image, src_blur, Size(BLUR_KERNEL_SIZE, BLUR_KERNEL_SIZE));
+    inRange(src_blur, Scalar::all(IN_RANGE_LOWB), Scalar::all(IN_RANGE_UPPB), src_bin);
 
-	blur(src_gray, src_gray, Size(3, 3));
-    adaptiveThreshold(src_gray, src_bin, 
-                        ADAPTIVE_TRESHOLD_MAX_VALUE, 
-                        ADAPTIVE_THRESH_MEAN_C, 
-                        THRESH_BINARY, 
-                        ADAPTIVE_TRESHOLD_BLOCK_SIZE, 
-                        ADAPTIVE_TRESHOLD_C);
+    Mat kernel = getStructuringElement(MORPH_TYPE,
+        Size(2 * MORPH_SIZE + 1, 2 * MORPH_SIZE + 1));
+
+    erode(src_bin, src_bin, kernel);
+    dilate(src_bin, src_bin, kernel);
+
+    for (int r = 1; r < MORPH_SIZE_MAX; r++)
+    {
+        Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(2 * r + 1, 2 * r + 1));
+        morphologyEx(src_bin, src_bin, MORPH_OPEN, kernel);
+        morphologyEx(src_bin, src_bin, MORPH_CLOSE, kernel);
+    }
+
     Canny(src_bin, canny_output, CANNY_TRESHOLD, CANNY_TRESHOLD * 2);
 
     vector<Vec4i> hierarchy;
@@ -46,7 +55,11 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         object.roi = boundingRect(object.contour);
 
         Mat image_mask = Mat::zeros(image.size(), CV_8UC1);
+        Mat image_contour_mask = Mat::zeros(image.size(), CV_8UC1);
+
         drawContours(image_mask, contours, i, Scalar::all(255), FILLED);
+        drawContours(image_contour_mask, contours, i, Scalar::all(255), 1);
+        subtract(image_mask, image_contour_mask, image_mask);
         Mat object_image;
         image(object.roi).copyTo(object_image, image_mask(object.roi));
 
@@ -65,7 +78,10 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         cvtColor(object_rotated, bounding_object, COLOR_BGR2GRAY);
         Rect crop_roi = boundingRect(bounding_object);
         Mat normalized_object;
-        object_rotated(crop_roi).copyTo(normalized_object);
+        if(crop_roi.area())
+            object_rotated(crop_roi).copyTo(normalized_object);
+        else
+            object_rotated.copyTo(normalized_object);
 
         // pencil nose detect
         Mat half_object;
@@ -86,7 +102,7 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         objects.push_back(object);
     }
 
-    if (objects.size() > 1)
+    if (objects.size() > 0)
         match(normalized_objects, objects);
 
     return objects;
@@ -137,7 +153,7 @@ void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Obje
             int result_rows = tm_image.rows - templ.rows + 1;
             tm_result.create(result_rows, result_cols, CV_32FC1);
 
-            matchTemplate(tm_image, templ, tm_result, TM_CCOEFF_NORMED);
+            matchTemplate(tm_image, templ, tm_result, TM_CCORR_NORMED);
 
             while (1) 
             {

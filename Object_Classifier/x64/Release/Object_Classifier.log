@@ -1,7 +1,22 @@
-﻿  main.cpp
+﻿  ObjectClassifier.cpp
+D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(60,71): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(61,74): warning C4267: аргумент: преобразование из "size_t" в "int"; возможна потеря данных
+D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(68,67): warning C4244: аргумент: преобразование "double" в "_Tp", возможна потеря данных
+          with
+          [
+              _Tp=float
+          ]
+D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(68,42): warning C4244: аргумент: преобразование "double" в "_Tp", возможна потеря данных
+          with
+          [
+              _Tp=float
+          ]
+D:\Projects\Softarex\CV_Task\Object_Classifier\Object_Classifier\ObjectClassifier.cpp(70,62): warning C4244: аргумент: преобразование "double" в "float", возможна потеря данных
+  main.cpp
   Создание кода
-  1 of 475 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+  2 of 478 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     0 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
+ObjectClassifier.obj : warning LNK4020: запись типа в "d:\projects\softarex\cv_task\object_classifier\object_classifier\x64\release\vc142.pdb" повреждена; некоторые символы и типы могут быть недоступными из отладчика
   Object_Classifier.vcxproj -> D:\Projects\Softarex\CV_Task\Object_Classifier\x64\Release\Object_Classifier.exe
