@@ -4,35 +4,45 @@
 #include "opencv2/imgproc.hpp"
 #include <iostream>
 #include <algorithm>
+#include <opencv2/photo.hpp>
 
 using namespace cv;
 using namespace std;
 
+extern int all, bll;
 
 std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
 {
     std::vector<Object> objects;
     std::vector<Mat> normalized_objects;
-    Mat src_gray, src_bin, canny_output;
-    Mat drawing = Mat::zeros(image.size(), CV_8UC3);
+    Mat src_blur, src_bin, canny_output,
+        drawing = Mat::zeros(image.size(), CV_8UC3);
 
-	cvtColor(image, src_gray, COLOR_BGR2GRAY);
+    blur(image, src_blur, Size(BLUR_KERNEL_SIZE, BLUR_KERNEL_SIZE));
+    inRange(src_blur, Scalar::all(IN_RANGE_LOWB), Scalar::all(IN_RANGE_UPPB), src_bin);
 
-	blur(src_gray, src_gray, Size(3, 3));
-    adaptiveThreshold(src_gray, src_bin, 
-                        ADAPTIVE_TRESHOLD_MAX_VALUE, 
-                        ADAPTIVE_THRESH_MEAN_C, 
-                        THRESH_BINARY, 
-                        ADAPTIVE_TRESHOLD_BLOCK_SIZE, 
-                        ADAPTIVE_TRESHOLD_C);
+    Mat kernel = getStructuringElement(MORPH_TYPE,
+        Size(2 * MORPH_SIZE + 1, 2 * MORPH_SIZE + 1));
+
+    erode(src_bin, src_bin, kernel);
+    dilate(src_bin, src_bin, kernel);
+
+    for (int r = 1; r < MORPH_SIZE_MAX; r++)
+    {
+        Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(2 * r + 1, 2 * r + 1));
+        morphologyEx(src_bin, src_bin, MORPH_OPEN, kernel);
+        morphologyEx(src_bin, src_bin, MORPH_CLOSE, kernel);
+    }
+
     Canny(src_bin, canny_output, CANNY_TRESHOLD, CANNY_TRESHOLD * 2);
 
     vector<Vec4i> hierarchy;
     vector<vector<Point> > contours;
     findContours(canny_output, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
     reduceNoise(contours, REDUCE_NOISE_MIN_LEN);
+    sortContours(contours);
 
-    for (size_t i = 0; i < contours.size(); ++i)                                      
+    for (size_t i = 0; i < contours.size(); ++i)
     {
         Object object;
 
@@ -45,7 +55,11 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         object.roi = boundingRect(object.contour);
 
         Mat image_mask = Mat::zeros(image.size(), CV_8UC1);
+        Mat image_contour_mask = Mat::zeros(image.size(), CV_8UC1);
+
         drawContours(image_mask, contours, i, Scalar::all(255), FILLED);
+        drawContours(image_contour_mask, contours, i, Scalar::all(255), 1);
+        subtract(image_mask, image_contour_mask, image_mask);
         Mat object_image;
         image(object.roi).copyTo(object_image, image_mask(object.roi));
 
@@ -64,8 +78,10 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         cvtColor(object_rotated, bounding_object, COLOR_BGR2GRAY);
         Rect crop_roi = boundingRect(bounding_object);
         Mat normalized_object;
-        object_rotated(crop_roi).copyTo(normalized_object);
-        //object_rotated.copyTo(normalized_object);
+        if(crop_roi.area())
+            object_rotated(crop_roi).copyTo(normalized_object);
+        else
+            object_rotated.copyTo(normalized_object);
 
         // pencil nose detect
         Mat half_object;
@@ -86,7 +102,7 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         objects.push_back(object);
     }
 
-    if (objects.size() > 1)
+    if (objects.size() > 0)
         match(normalized_objects, objects);
 
     return objects;
@@ -98,6 +114,14 @@ void ObjectClassifier::reduceNoise(vector<vector<Point>>& contours, const int mi
         return arcLength(v, true) < minLen ? true : false;
     };
     contours.erase(std::remove_if(contours.begin(), contours.end(), condition), contours.end());
+}
+
+void ObjectClassifier::sortContours(std::vector<std::vector<cv::Point>>& contours)
+{
+    auto condition = [](const std::vector<cv::Point>& a, const std::vector<cv::Point>& b) {
+        return arcLength(a, true) > arcLength(b, true) ? true : false;
+    };
+    std::sort(begin(contours), end(contours), condition);
 }
 
 void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Object>& objects)
@@ -129,8 +153,7 @@ void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Obje
             int result_rows = tm_image.rows - templ.rows + 1;
             tm_result.create(result_rows, result_cols, CV_32FC1);
 
-            matchTemplate(tm_image, templ, tm_result, TM_CCOEFF);
-            normalize(tm_result, tm_result, 0, 1, NORM_MINMAX, -1, Mat());
+            matchTemplate(tm_image, templ, tm_result, TM_CCORR_NORMED);
 
             while (1) 
             {
@@ -158,15 +181,17 @@ void ObjectClassifier::hconcatMatrix(const std::vector<cv::Mat>& src, const std:
     if (!src.size()) return;
 
     vector<int> heights;
-    int height, width = 0;
+    int height, max_width = 0, width = 0;
 
     for (int index : indexes) {
         width += src[index].size().width;
     }
     for (const auto& object : src) {
         heights.push_back(object.size().height);
+        max_width = object.size().width > max_width ? object.size().width : max_width;
     }
     height = *std::max_element(begin(heights), end(heights));
+    width = width > max_width ? width : max_width;
 
     dst = Mat::zeros(Size(width, height), src[0].type());
     Point2i y_offset;

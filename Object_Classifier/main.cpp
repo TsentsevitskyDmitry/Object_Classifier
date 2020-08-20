@@ -12,13 +12,15 @@ using namespace std;
 Scalar get_color_by_index(int index)
 {
     RNG rng(index);
-    Scalar res((int)rng, (int)rng, (int)rng);
+    int key = (int)rng;
+    RNG color(key);
+    Scalar res((int)color, (int)color, (int)color);
     return res;
 }
 
 int main(int argc, char** argv)
 {
-    Mat src = imread(samples::findFile("../pics/img3.jpg"));
+    Mat src = imread(samples::findFile("../pics/img3_.jpg"));
 
     ObjectClassifier classifier;
     vector<Object> objects = classifier.process(src);
