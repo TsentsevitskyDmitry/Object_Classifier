@@ -15,23 +15,24 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
 {
     std::vector<Object> objects;
     std::vector<Mat> normalized_objects;
-    Mat src_blur, src_bin, canny_output,
+    Mat src_bin, canny_output,
         drawing = Mat::zeros(image.size(), CV_8UC3);
 
-    blur(image, src_blur, Size(BLUR_KERNEL_SIZE, BLUR_KERNEL_SIZE));
-    inRange(src_blur, Scalar::all(IN_RANGE_LOWB), Scalar::all(IN_RANGE_UPPB), src_bin);
+    inRange(image, Scalar::all(IN_RANGE_LOWB), Scalar::all(IN_RANGE_UPPB), src_bin);
+
+    bitwise_not(src_bin, src_bin);
 
     Mat kernel = getStructuringElement(MORPH_TYPE,
         Size(2 * MORPH_SIZE + 1, 2 * MORPH_SIZE + 1));
 
-    erode(src_bin, src_bin, kernel);
     dilate(src_bin, src_bin, kernel);
+    erode(src_bin, src_bin, kernel);
 
-    for (int r = 1; r < MORPH_SIZE_MAX; r++)
+    for (int r = 1; r <= MORPH_SIZE_MAX; r++)
     {
         Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(2 * r + 1, 2 * r + 1));
-        morphologyEx(src_bin, src_bin, MORPH_OPEN, kernel);
         morphologyEx(src_bin, src_bin, MORPH_CLOSE, kernel);
+        morphologyEx(src_bin, src_bin, MORPH_OPEN, kernel);
     }
 
     Canny(src_bin, canny_output, CANNY_TRESHOLD, CANNY_TRESHOLD * 2);
@@ -58,10 +59,11 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         Mat image_contour_mask = Mat::zeros(image.size(), CV_8UC1);
 
         drawContours(image_mask, contours, i, Scalar::all(255), FILLED);
-        drawContours(image_contour_mask, contours, i, Scalar::all(255), 1);
+        //drawContours(image_contour_mask, contours, i, Scalar::all(255), 1);
         subtract(image_mask, image_contour_mask, image_mask);
-        Mat object_image;
+        Mat object_image, object_background_mask;
         image(object.roi).copyTo(object_image, image_mask(object.roi));
+        image_mask(object.roi).copyTo(object_background_mask);
 
         // angle between vertical and fitLine result
         double angle = -atanf(vx / vy) / CV_PI * 180.0;
@@ -71,17 +73,30 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         rot.at<double>(0, 2) += bbox.width / 2.0 - center.x;
         rot.at<double>(1, 2) += bbox.height / 2.0 - center.y;
 
-        Mat object_rotated;
+        Mat object_rotated, object_background_mask_rotated;
         warpAffine(object_image, object_rotated, rot, bbox.size());
+        warpAffine(object_background_mask, object_background_mask_rotated, rot, bbox.size());
+        bitwise_not(object_background_mask_rotated, object_background_mask_rotated);
 
         Mat bounding_object;
         cvtColor(object_rotated, bounding_object, COLOR_BGR2GRAY);
         Rect crop_roi = boundingRect(bounding_object);
-        Mat normalized_object;
-        if(crop_roi.area())
+
+        Mat object_background_color_mask, object_background_color;
+        cvtColor(object_background_mask_rotated, object_background_color_mask, COLOR_GRAY2BGR);
+        object_background_color.create(object_background_color_mask.size(), CV_8UC3);
+        object_background_color = Scalar::all(BACKGROUND_COLOR);
+        bitwise_and(object_background_color, object_background_color_mask, object_background_color);
+
+        Mat normalized_object, normalized_background;
+        if (crop_roi.area()) {
             object_rotated(crop_roi).copyTo(normalized_object);
-        else
+            object_background_color(crop_roi).copyTo(normalized_background);
+        }
+        else {
             object_rotated.copyTo(normalized_object);
+            object_background_color.copyTo(normalized_background);
+        }
 
         // pencil nose detect
         Mat half_object;
@@ -95,9 +110,12 @@ std::vector<Object> ObjectClassifier::process(const cv::Mat& image)
         cvtColor(half_object, half_object, COLOR_BGR2GRAY);
         int downside = countNonZero(half_object);
 
-        if (downside < upside)
+        if (downside < upside) {
             rotate(normalized_object, normalized_object, ROTATE_180);
+            rotate(normalized_background, normalized_background, ROTATE_180);
+        }
 
+        bitwise_or(normalized_object, normalized_background, normalized_object);
         normalized_objects.push_back(normalized_object);
         objects.push_back(object);
     }
@@ -153,7 +171,7 @@ void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Obje
             int result_rows = tm_image.rows - templ.rows + 1;
             tm_result.create(result_rows, result_cols, CV_32FC1);
 
-            matchTemplate(tm_image, templ, tm_result, TM_CCORR_NORMED);
+            matchTemplate(tm_image, templ, tm_result, TM_CCOEFF_NORMED);
 
             while (1) 
             {
@@ -161,7 +179,7 @@ void ObjectClassifier::match(const std::vector<Mat>& templates, std::vector<Obje
                 Point matchLoc;
                 minMaxLoc(tm_result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
                 matchLoc = maxLoc;
-    
+
                 if (maxVal < TM_MATCH_TRESHOLD)
                     break;
 
@@ -194,6 +212,7 @@ void ObjectClassifier::hconcatMatrix(const std::vector<cv::Mat>& src, const std:
     width = width > max_width ? width : max_width;
 
     dst = Mat::zeros(Size(width, height), src[0].type());
+    dst = Scalar::all(BACKGROUND_COLOR);
     Point2i y_offset;
     for (int index : indexes) {
         const Mat& object = src[index];
