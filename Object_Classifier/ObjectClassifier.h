@@ -10,15 +10,16 @@ class ObjectClassifier
 {
 private:
 	const int	 BLUR_KERNEL_SIZE = 3;
-	const int	 IN_RANGE_LOWB = 100;
+	const int	 IN_RANGE_LOWB = 80;
 	const int	 IN_RANGE_UPPB = 255;
-	const int	 MORPH_SIZE = 11;
-	const int	 MORPH_SIZE_MAX = 3;
+	const int	 MORPH_SIZE = 9;
 	const int	 MORPH_TYPE = cv::MORPH_ELLIPSE;
+	const int	 MORPH_SIZE_MAX = 1;
 	const double CANNY_TRESHOLD = 200;
 	const int	 REDUCE_NOISE_MIN_LEN = 200;
+	const int    BACKGROUND_COLOR = 200;
 	const int	 OBJECT_ID_EMPTY = -1;
-	const double TM_MATCH_TRESHOLD = 0.85;
+	const double TM_MATCH_TRESHOLD = 0.53; // TM_CCOEFF_NORMED
 
 	void reduceNoise(std::vector<std::vector<cv::Point>>& contours, const int minLen = 100);
 	void sortContours(std::vector<std::vector<cv::Point>>& contours);

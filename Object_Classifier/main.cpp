@@ -20,7 +20,7 @@ Scalar get_color_by_index(int index)
 
 int main(int argc, char** argv)
 {
-    Mat src = imread(samples::findFile("../pics/img4_2.jpg"));
+    Mat src = imread(samples::findFile("../pics/img3.jpg"));
 
     ObjectClassifier classifier;
     vector<Object> objects = classifier.process(src);
